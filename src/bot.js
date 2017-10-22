@@ -1,6 +1,7 @@
 const Bot = require('./lib/Bot')
 const SOFA = require('sofa-js')
 const Fiat = require('./lib/Fiat')
+const ID = require('./lib/IdService')
 
 let bot = new Bot()
 
@@ -32,13 +33,13 @@ function onMessage(session, message) {
 
 function onCommand(session, command) {
   switch (command.content.value) {
-    case 'ping':
-      pong(session)
+    case 'test':
+      test(session)
       break
-    case 'count':
+    case 'newvote':
       count(session)
       break
-    case 'donate':
+    case 'vote':
       donate(session)
       break
     }
@@ -69,11 +70,18 @@ function onPayment(session, message) {
 // STATES
 
 function welcome(session) {
-  sendMessage(session, `Hello Token!`)
+  let userId = session.get('tokenId')
+  ID.getUser(userId).then((user) => { 
+    let userName = formatName(user);
+    let msg = 'Hello ' + userName + ', system online!';
+    sendMessage(session, msg) })
+  }
 }
 
-function pong(session) {
-  sendMessage(session, `Pong`)
+function test(session) {
+  let userId = session.get('tokenId');
+  let msg = 'voting system is online!';
+  sendMessage(session, msg)
 }
 
 // example of how to store state on each user
@@ -92,11 +100,23 @@ function donate(session) {
 
 // HELPERS
 
+function formatName(user) {
+  if (!user) {
+    return "<Unknown>";
+  } else if (user.name) {
+    return user.name + " (@" + user.username + ")";
+  } else if (user.username) {
+    return "@" + user.username;
+  } else {
+    return "<Unknown>";
+  }
+}
+
 function sendMessage(session, message) {
   let controls = [
-    {type: 'button', label: 'Ping', value: 'ping'},
-    {type: 'button', label: 'Count', value: 'count'},
-    {type: 'button', label: 'Donate', value: 'donate'}
+    {type: 'button', label: 'Test', value: 'test'},
+    {type: 'button', label: 'New Vote', value: 'newvote'},
+    {type: 'button', label: 'Existing Vote', value: 'vote'}
   ]
   session.reply(SOFA.Message({
     body: message,
